@@ -42,7 +42,7 @@ class Form(Handler):
         if subject and content:
             p = Post(subject = subject, content = content)
             p.put()
-            self.redirect('/newpost')
+            self.redirect('/blog/newpost/%s' % str(p.key().id()))
 
         else:
             error = "Please subject and content"
@@ -51,12 +51,16 @@ class Form(Handler):
 
 class NewPost(Handler):
 
-    def get(self):
-        posts = db.GqlQuery("SELECT * FROM Post "
-                            "ORDER BY created DESC ")
-        lastPost = posts[0]
-        self.render("newpost.html", subject=lastPost.subject, content=lastPost.content)
+    def get(self, post_id):
+        key = db.Key.from_path('Post', int(post_id))
+        post = db.get(key)
+
+        if not post:
+            self.error(404)
+            return
+
+        self.render('newpost.html', post = post)
 
 
 
-app = webapp2.WSGIApplication([('/', MainPage), ('/form', Form), ('/newpost', NewPost)], debug = True)
+app = webapp2.WSGIApplication([('/blog/?', MainPage), ('/blog/form', Form), ('/blog/newpost/([0-9]+)', NewPost)], debug = True)
